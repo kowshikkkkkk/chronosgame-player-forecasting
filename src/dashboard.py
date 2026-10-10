@@ -223,7 +223,7 @@ with tab_cap:
     st.subheader("How much spare capacity does a forecast need?")
     cap = dd.capacity_table(intervals)
     st.markdown("The **buffer** is how far the 95% upper bound sits above the point forecast. "
-                "Stable games need a small buffer, spiky ones a large one, and every game needs "
+                "Stable games need a small buffer, spiky ones a large one, and most games need "
                 "more in week two. A good set of ranges catches about 80% of outcomes inside the "
                 "80% range and goes above the 95% bound on about 5% of days.")
     st.altair_chart(buffer_chart(cap))

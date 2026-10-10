@@ -19,7 +19,7 @@ So the project forecasts the daily peak (the busiest moment, which is what serve
 |---|---|
 | Do the models beat "repeat last week"? | Yes, by roughly 5-16% (MASE), mostly in the first week. |
 | How far ahead can you trust a forecast? | About one week. For days 8-14 the gain over the baseline is small, so treat it as a range. |
-| How much spare capacity is needed? | Depends on the game: about 13-21% (Rocket League) up to 26-83% (Civilization VI), more in week two. |
+| How much spare capacity is needed? | Depends on the game: about 13-21% (Rocket League) up to 26-83% (Civilization VI), usually more in week two (Rust is the exception). |
 | What did the March 2020 lockdown do? | Raised peaks sharply for most games and broke every model. |
 | Do sales lift player peaks? | No reliable effect in this data (see limitations). |
 
