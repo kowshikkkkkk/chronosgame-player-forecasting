@@ -1,0 +1,17 @@
+# environment
+venv/
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# data: large, and the dataset licence is not stated, so it is not redistributed
+data/
+steam_sample/
+*.zip
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

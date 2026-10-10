@@ -1,0 +1,9 @@
+-- When do unusually low hours (flagged in cleaning) happen? Counts by weekday and hour of day.
+-- dow: 0 = Sunday ... 6 = Saturday; hod: hour of day 0-23 (in the dataset's own timezone).
+DROP TABLE IF EXISTS insight_dips;
+CREATE TABLE insight_dips AS
+SELECT game, dow, hod, COUNT(*) AS dip_hours
+FROM hourly
+WHERE dip = 1
+GROUP BY game, dow, hod
+ORDER BY game, dow, hod;
