@@ -13,6 +13,11 @@ How the test works: for each game, train on all days up to a cutoff, forecast th
 days, score against what really happened, then move the cutoff forward 14 days and repeat
 (first cutoff after 365 days of history). Time order is always respected.
 
+No leakage: the training series at each cutoff is rebuilt from the raw hourly readings before
+that cutoff and cleaned using only those readings (see train_series). The fully cleaned
+daily file is used only for the actual values being scored, and for the cutoff dates.
+Needs steam_sample/steam_hourly.csv as well as data/processed/daily_clean.csv.
+
 Metrics: MASE (error relative to a seasonal-naive forecast made inside the training data;
 below 1 is good, comparable across games), sMAPE (percent error), RMSE (players).
 
@@ -27,7 +32,9 @@ import warnings
 import numpy as np
 import pandas as pd
 
-H = 14          # forecast horizon, days
+from clean_steam import NAMES, clean_game, read_hourly
+
+H = 14         # forecast horizon, days
 STEP = 14       # days between cutoffs
 INITIAL = 365   # days of history before the first cutoff
 M = 7           # weekly seasonality
@@ -70,6 +77,20 @@ def rmse(y, f):
     return float(np.sqrt(np.mean((y - f) ** 2)))
 
 
+TARGET_COLS = {"peak_players": ("peak", "max"), "avg_players": ("players", "mean")}
+
+
+def train_series(raw_game, cutoff, target):
+    """The daily series a forecaster would really have had on `cutoff`.
+
+    Uses only raw hourly readings before the cutoff and cleans them with only those readings, so the
+    gap-filling rules (which look a week ahead) can never see data from after the cutoff."""
+    col, how = TARGET_COLS[target]
+    seen = raw_game[raw_game["hour"] < cutoff]
+    cleaned = clean_game(seen, end=cutoff - pd.Timedelta(hours=1))
+    return cleaned[col].resample("D").agg(how)
+
+
 def read_daily(path):
     d = pd.read_csv(path)
     try:
@@ -99,16 +120,21 @@ def forecast_all(train, skipped, game, cutoff):
     return fcs
 
 
-def main(target="peak_players", path="data/processed/daily_clean.csv"):
+def main(target="peak_players", path="data/processed/daily_clean.csv",
+         raw_path="steam_sample/steam_hourly.csv"):
     daily = read_daily(path)
+    raw = read_hourly(raw_path)
+    raw_by_game = {NAMES.get(a, str(a)): g for a, g in raw.groupby("appid")}
     rows, by_day = [], []
     skipped = set()
     for game, g in daily.groupby("game"):
-        y = g[target].to_numpy(float)
+        y = g[target].to_numpy(float)       # cleaned with the whole history: used ONLY for the actuals
         dates = g["date"].to_numpy()
         for origin in range(INITIAL, len(y) - H + 1, STEP):
-            train, actual = y[:origin], y[origin:origin + H]
             cutoff = pd.Timestamp(dates[origin])
+            train = train_series(raw_by_game[game], cutoff, target).to_numpy(float)
+            assert len(train) == origin, f"{game} {cutoff.date()}: train has {len(train)} days, expected {origin}"
+            actual = y[origin:origin + H]
             scale = scale_of(train)
             for name, f in forecast_all(train, skipped, game, cutoff).items():
                 abs_err = np.abs(actual - f)
@@ -166,4 +192,4 @@ def main(target="peak_players", path="data/processed/daily_clean.csv"):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:3])
+    main(*sys.argv[1:4])

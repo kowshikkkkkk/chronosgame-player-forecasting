@@ -62,6 +62,7 @@ flowchart TD
 - **Target is the daily peak.** Servers must cope with the busiest moment, and the average hides it. Concurrent players are not daily active users or revenue, and the project makes no claim about either.
 - **Cleaning.** Blank readings and failed readings stored as 0 were rebuilt (about 2% of hours). Gaps of 6 hours or less use a straight line. Longer gaps use the same hour one week earlier and later, which keeps the daily shape. Unusually low hours are flagged but left unchanged, because some are real (PUBG's weekly maintenance).
 - **Rolling-origin backtest.** 43 cutoffs per game, a 14-day horizon, 365 days of initial history. One train/test split would mostly measure luck.
+- **No leakage.** The training data at each cutoff is rebuilt from raw readings before that cutoff and cleaned using only those readings, because the gap-filling rule looks a week ahead. `tests/test_no_leakage.py` scrambles the future and checks the training series does not move. On this dataset the earlier version already gave identical peak-player training data, so the results did not change; the average-players series moved by at most 0.6% on a day.
 - **Models.** Seasonal naive (the benchmark), ETS (damped trend, weekly pattern) and SARIMAX (1,1,1)(1,0,1,7), both on the log scale, plus an ensemble that averages ETS and SARIMAX. The ensemble is not the best on every cutoff, but it is never far from the best and avoids betting on the wrong model.
 - **Metrics.** MASE (error relative to a repeat-last-week forecast, comparable across games of different size), sMAPE (typical percent error) and RMSE.
 - **Prediction ranges.** Built from the model's own earlier misses (log of actual over forecast), pooled over three neighbouring forecast days, using only cutoffs already known at the time. The 80% range is the 10th to 90th percentile and the 95% upper bound is the capacity level. The first 8 cutoffs have too little history, so ranges cover 35 cutoffs per game.
@@ -121,6 +122,8 @@ python src/summarize_steam.py steam_sample
 python src/clean_steam.py
 # 4. backtest (a few minutes)
 python src/backtest_baselines.py
+# (optional) check the backtest never sees the future
+python tests/test_no_leakage.py
 # 5. prediction ranges and charts
 python src/intervals_and_charts.py
 # 6. SQL insights
@@ -144,6 +147,7 @@ src/
   dashboard.py              Streamlit app
   dashboard_data.py         data preparation for the app
 sql/insights/               six SQL queries (window functions)
+tests/test_no_leakage.py     checks no training data comes from after its cutoff
 reports/figures/            fan charts, error by forecast day
 .streamlit/config.toml      theme
 ```

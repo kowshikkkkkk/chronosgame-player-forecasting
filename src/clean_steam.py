@@ -63,8 +63,13 @@ def fill(s, bad):
     return out, method
 
 
-def clean_game(g):
+def clean_game(g, end=None):
+    """Clean one game's hourly rows. With `end` (an hour), the series is cut off there: hours with no
+    row up to `end` count as missing, and nothing after `end` is ever looked at. The backtest uses this
+    to clean the data as it looked on each forecast date."""
     g = g.set_index("hour").sort_index().asfreq("h")
+    if end is not None:
+        g = g.reindex(pd.date_range(g.index[0], end, freq="h"))
     n_obs = g["n_obs"].fillna(0)
     mean_bad = g["mean"].isna() | (g["min"] <= 0) | (n_obs == 0)
     max_bad = g["max"].isna() | (g["max"] <= 0) | (n_obs == 0)
