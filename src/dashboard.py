@@ -16,6 +16,7 @@ import pandas as pd
 import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))   # lets us import the sibling modules
+import dashboard_causal as dc  # noqa: E402
 import dashboard_data as dd  # noqa: E402
 
 PROC = Path(__file__).resolve().parents[1] / "data" / "processed"
@@ -168,8 +169,8 @@ st.caption("Daily peak concurrent players for five Steam games, December 2017 to
            "Every forecast is a replay: what the model would have said on that date, using only "
            "data available then.")
 
-tab_view, tab_acc, tab_cap, tab_ins, tab_data = st.tabs(
-    ["Forecast viewer", "Accuracy", "Capacity buffers", "Insights", "Data and method"])
+tab_view, tab_acc, tab_cap, tab_ins, tab_causal, tab_data = st.tabs(
+    ["Forecast viewer", "Accuracy", "Capacity buffers", "Insights", "Causal analysis", "Data and method"])
 
 with tab_view:
     left, right = st.columns([1, 2])
@@ -239,9 +240,17 @@ with tab_ins:
                     "These describe the past; the forecasts above look ahead.")
         a, b = st.columns(2)
         a.subheader("Lockdown lift")
-        a.altair_chart(lift_bar(ins["lockdown"], "lift_pct", "Change in average daily peak (%)"))
-        a.caption("Mar-Jun 2020 against Mar-Jun 2019. Includes each game's own trend: PUBG was "
-                  "already shrinking, so its fall is not all lockdown.")
+        a.altair_chart(lift_bar(ins["lockdown"], "lift_vs_early_2020_pct", "Change in average daily peak (%)"))
+        a.caption("Mar-Jun 2020 against Jan-Feb 2020, the months just before. Three games rose; "
+                  "GTA V and PUBG did not.")
+        with a.expander("Year-on-year comparison, and why it misleads"):
+            yoy = ins["lockdown"][["game", "avg_peak_mar_jun_2019", "avg_peak_mar_jun_2020", "lift_vs_2019_pct"]]
+            st.dataframe(yoy.rename(columns={"game": "Game", "avg_peak_mar_jun_2019": "Mar-Jun 2019",
+                                             "avg_peak_mar_jun_2020": "Mar-Jun 2020",
+                                             "lift_vs_2019_pct": "Change (%)"}), hide_index=True)
+            st.caption("GTA V looks like +104% year on year, but it was already climbing through 2019 "
+                       "and peaked in February 2020, before lockdown. A year-on-year gap mixes lockdown "
+                       "with each game's own growth or decline.")
         b.subheader("Weekend lift")
         b.altair_chart(lift_bar(ins["weekend"], "weekend_lift_pct", "Weekend vs weekday peak (%)"))
         b.caption("Average Saturday/Sunday peak against Monday-Friday, whole history.")
@@ -266,6 +275,9 @@ with tab_ins:
         st.altair_chart(dips_heatmap(dd.dips_grid(ins["dips"], pick)))
         st.caption("When hours were flagged as unusually low during cleaning, by weekday and hour "
                    "(dataset's own clock). PUBG's Wednesday early-morning block is weekly maintenance.")
+
+with tab_causal:
+    dc.render(st, PROC.parents[1] / "reports")
 
 with tab_data:
     st.subheader("Where the data comes from")
