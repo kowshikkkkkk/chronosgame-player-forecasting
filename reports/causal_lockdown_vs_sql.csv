@@ -1,0 +1,6 @@
+game,sql_vs_jan_feb_2020_pct,sql_vs_mar_jun_2019_pct,counterfactual_median_pct_11mar_30jun,p10_pct,p90_pct,actual_vs_last30_pre_days_pct,counterfactual_vs_last30_pre_days_pct,counterfactual_median_pct_full_post
+Civilization VI,35.7,52.8,64.49,5.26,167.54,58.88,1.96,59.6
+GTA V,-8.37,104.22,12.15,-30.59,90.06,-9.76,-14.89,2.98
+PUBG,-7.3,-33.94,0.2,-21.49,30.87,-8.07,-7.05,-3.28
+Rocket League,10.4,36.51,17.12,-7.31,47.88,16.27,1.21,11.9
+Rust,14.4,47.95,21.04,-35.87,134.37,21.63,11.36,19.71
